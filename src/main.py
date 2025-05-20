@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from src import db
 from discord.ext.commands import has_permissions, CheckFailure
 from googletrans import Translator
+import re
 
 # Load environment variables
 load_dotenv()
@@ -84,21 +85,38 @@ async def on_message(message):
         user_lang = await db.get_user_lang(message.author.id)
         if not user_lang:
             user_lang = 'en'  # Default to English
+        # --- Preserve user mentions with robust placeholders ---
+        content = message.content
+        mention_map = {}
+        def mention_replacer(match):
+            user_id = match.group(1)
+            placeholder = f"[[[MENTION{len(mention_map)+1}]]]"
+            mention_map[placeholder] = f"<@{user_id}>"
+            return placeholder
+        # Replace all user mentions with robust placeholders
+        content_preserved = re.sub(r'<@!?([0-9]+)>', mention_replacer, content)
         # Try to detect the language of the message
         try:
-            detected = translator.detect(message.content)
+            detected = translator.detect(content_preserved)
             detected_lang = detected.lang
         except Exception:
             detected_lang = None
         # Only translate if the message isn't already in the user's preferred language
         if detected_lang and detected_lang != user_lang:
             try:
-                translated = translator.translate(message.content, dest=user_lang)
-                await message.reply(f"{translated.text}")
+                translated = translator.translate(content_preserved, dest=user_lang)
+                translated_text = translated.text
+                # Restore mentions (case-insensitive)
+                for placeholder, mention in mention_map.items():
+                    translated_text = re.sub(re.escape(placeholder), mention, translated_text, flags=re.IGNORECASE)
+                await message.reply(f"{translated_text}")
             except Exception as e:
                 await message.reply(f"[Translation error: {e}]")
         else:
-            await message.reply(f"{message.content}")
+            # Restore mentions in the original content (case-insensitive)
+            for placeholder, mention in mention_map.items():
+                content_preserved = re.sub(re.escape(placeholder), mention, content_preserved, flags=re.IGNORECASE)
+            await message.reply(f"{content_preserved}")
     await bot.process_commands(message)
 
 # Run the bot
