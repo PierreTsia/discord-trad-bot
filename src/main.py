@@ -24,6 +24,37 @@ SUPPORTED_LANGUAGES = {
 
 translator = Translator()
 
+# --- Helper Functions ---
+def preserve_user_mentions(text):
+    """Replace user mentions with robust placeholders and return (text_with_placeholders, mention_map)."""
+    mention_map = {}
+    def mention_replacer(match):
+        user_id = match.group(1)
+        placeholder = f"[[[MENTION{len(mention_map)+1}]]]"
+        mention_map[placeholder] = f"<@{user_id}>"
+        return placeholder
+    text_with_placeholders = re.sub(r'<@!?([0-9]+)>', mention_replacer, text)
+    return text_with_placeholders, mention_map
+
+def restore_mentions(text, mention_map):
+    """Restore mentions in text using the mention_map (case-insensitive)."""
+    for placeholder, mention in mention_map.items():
+        text = re.sub(re.escape(placeholder), mention, text, flags=re.IGNORECASE)
+    return text
+
+def translate_message(content, dest_lang):
+    """Translate content to dest_lang using googletrans."""
+    return translator.translate(content, dest=dest_lang).text
+
+def detect_language(content):
+    """Detect the language of the content using googletrans."""
+    try:
+        detected = translator.detect(content)
+        return detected.lang
+    except Exception:
+        return None
+
+# --- Bot Events and Commands ---
 @bot.event
 async def on_ready():
     await db.init_db()
@@ -48,7 +79,6 @@ async def setlang(ctx, lang: str):
 async def languages(ctx):
     """List all supported language codes."""
     codes = sorted(SUPPORTED_LANGUAGES)
-    # Discord has a 2000 character message limit, so chunk if needed
     chunk_size = 50
     for i in range(0, len(codes), chunk_size):
         await ctx.send(' '.join(codes[i:i+chunk_size]))
@@ -85,37 +115,19 @@ async def on_message(message):
         user_lang = await db.get_user_lang(message.author.id)
         if not user_lang:
             user_lang = 'en'  # Default to English
-        # --- Preserve user mentions with robust placeholders ---
-        content = message.content
-        mention_map = {}
-        def mention_replacer(match):
-            user_id = match.group(1)
-            placeholder = f"[[[MENTION{len(mention_map)+1}]]]"
-            mention_map[placeholder] = f"<@{user_id}>"
-            return placeholder
-        # Replace all user mentions with robust placeholders
-        content_preserved = re.sub(r'<@!?([0-9]+)>', mention_replacer, content)
-        # Try to detect the language of the message
-        try:
-            detected = translator.detect(content_preserved)
-            detected_lang = detected.lang
-        except Exception:
-            detected_lang = None
+        # Preserve user mentions
+        content_preserved, mention_map = preserve_user_mentions(message.content)
+        detected_lang = detect_language(content_preserved)
         # Only translate if the message isn't already in the user's preferred language
         if detected_lang and detected_lang != user_lang:
             try:
-                translated = translator.translate(content_preserved, dest=user_lang)
-                translated_text = translated.text
-                # Restore mentions (case-insensitive)
-                for placeholder, mention in mention_map.items():
-                    translated_text = re.sub(re.escape(placeholder), mention, translated_text, flags=re.IGNORECASE)
+                translated_text = translate_message(content_preserved, user_lang)
+                translated_text = restore_mentions(translated_text, mention_map)
                 await message.reply(f"{translated_text}")
             except Exception as e:
                 await message.reply(f"[Translation error: {e}]")
         else:
-            # Restore mentions in the original content (case-insensitive)
-            for placeholder, mention in mention_map.items():
-                content_preserved = re.sub(re.escape(placeholder), mention, content_preserved, flags=re.IGNORECASE)
+            content_preserved = restore_mentions(content_preserved, mention_map)
             await message.reply(f"{content_preserved}")
     await bot.process_commands(message)
 
