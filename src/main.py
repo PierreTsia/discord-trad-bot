@@ -7,6 +7,7 @@ from discord.ext.commands import has_permissions, CheckFailure
 from googletrans import Translator
 import re
 import aiosqlite
+from discord import app_commands
 
 # Load environment variables
 load_dotenv()
@@ -16,7 +17,79 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+class TranslationBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix='!', intents=intents, help_command=None)
+        
+    async def setup_hook(self):
+        # Add autocomplete for language codes
+        @self.tree.command(name="setlang", description="Set your preferred language")
+        @app_commands.describe(language="Your preferred language")
+        async def setlang(interaction: discord.Interaction, language: str):
+            if language not in SUPPORTED_LANGUAGES:
+                await interaction.response.send_message(f'`{language}` is not a supported language code. Use `!languages` to see the list of supported codes.', ephemeral=True)
+                return
+            await db.set_user_lang(interaction.user.id, language)
+            await interaction.response.send_message(f'Your preferred language has been set to `{language}`', ephemeral=True)
+        
+        @setlang.autocomplete('language')
+        async def language_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+            return [
+                app_commands.Choice(name=lang, value=lang)
+                for lang in sorted(SUPPORTED_LANGUAGES)
+                if current.lower() in lang.lower()
+            ][:25]  # Discord limits to 25 choices
+
+bot = TranslationBot()
+
+# Custom help command
+class CustomHelpCommand(commands.HelpCommand):
+    def is_admin_command(self, command):
+        # Check if the command requires administrator permissions
+        for check in command.checks:
+            if hasattr(check, '__qualname__') and 'has_permissions' in check.__qualname__:
+                # Check if 'administrator=True' is in the closure variables
+                closure = getattr(check, '__closure__', None)
+                if closure:
+                    for cell in closure:
+                        if isinstance(cell.cell_contents, dict) and cell.cell_contents.get('administrator', False):
+                            return True
+        return False
+
+    async def send_bot_help(self, mapping):
+        embed = discord.Embed(title="Translation Bot Help", color=discord.Color.blue())
+        
+        user_commands = []
+        admin_commands = []
+        for cmd in self.get_bot_mapping()[None]:
+            if not cmd.hidden:
+                if self.is_admin_command(cmd):
+                    admin_commands.append(f"`!{cmd.name}` - {cmd.short_doc}")
+                else:
+                    user_commands.append(f"`!{cmd.name}` - {cmd.short_doc}")
+        embed.add_field(name="User Commands", value="\n".join(user_commands) or "No user commands available", inline=False)
+        if admin_commands:
+            embed.add_field(name="Admin Commands", value="\n".join(admin_commands), inline=False)
+        embed.add_field(
+            name="Additional Information",
+            value="• Use `!languages` to see all supported language codes\n"
+                  "• Translation is automatic in designated channels\n"
+                  "• Admin commands require administrator permissions",
+            inline=False
+        )
+        await self.get_destination().send(embed=embed)
+
+    async def send_command_help(self, command):
+        embed = discord.Embed(
+            title=f"Command: !{command.name}",
+            description=command.help or "No description available",
+            color=discord.Color.blue()
+        )
+        if command.usage:
+            embed.add_field(name="Usage", value=f"`!{command.name} {command.usage}`", inline=False)
+        await self.get_destination().send(embed=embed)
+
+bot.help_command = CustomHelpCommand()
 
 # Supported language codes (Google Translate ISO 639-1)
 SUPPORTED_LANGUAGES = {
@@ -110,17 +183,17 @@ async def debugdb_error(ctx, error):
 
 @bot.command(name='setlang')
 async def setlang(ctx, lang: str):
-    """Set your preferred language. Usage: !setlang <language_code>"""
+    """Set your preferred language for translations. Example: !setlang fr"""
     lang = lang.lower()
     if lang not in SUPPORTED_LANGUAGES:
         await ctx.send(f'`{lang}` is not a supported language code. Use `!languages` to see the list of supported codes.')
         return
     await db.set_user_lang(ctx.author.id, lang)
-    await ctx.send(f'Your preferred language has been set to `{lang}`.')
+    await ctx.send(f'Your preferred language has been set to `{lang}`')
 
 @bot.command(name='languages')
 async def languages(ctx):
-    """List all supported language codes."""
+    """Display all supported language codes"""
     codes = sorted(SUPPORTED_LANGUAGES)
     chunk_size = 50
     for i in range(0, len(codes), chunk_size):
@@ -128,7 +201,7 @@ async def languages(ctx):
 
 @bot.command(name='mylang')
 async def mylang(ctx):
-    """Show your current preferred language."""
+    """Show your current preferred language setting"""
     user_lang = await db.get_user_lang(ctx.author.id)
     if user_lang:
         await ctx.send(f'Your preferred language is `{user_lang}`.')
@@ -137,17 +210,15 @@ async def mylang(ctx):
 
 @bot.command(name='settranschannel')
 @has_permissions(administrator=True)
-async def settranschannel(ctx, channel: discord.TextChannel = None):
-    """Set the translation channel. Usage: !settranschannel #channel (or run in the channel to set it)"""
-    if channel is None:
-        channel = ctx.channel
+async def settranschannel(ctx, channel: discord.TextChannel):
+    """Set the translation channel. Usage: !settranschannel #channel"""
     await db.add_trans_channel(channel.id)
     await ctx.send(f'Translation channel added: {channel.mention}')
 
 @bot.command(name='addtranschannel')
 @has_permissions(administrator=True)
 async def addtranschannel(ctx, channel: discord.TextChannel):
-    """Add a new translation channel. Usage: !addtranschannel #channel"""
+    """Add a new channel for automatic translation. Usage: !addtranschannel #channel"""
     if not await db.is_trans_channel(channel.id):
         await db.add_trans_channel(channel.id)
         await ctx.send(f'Translation channel added: {channel.mention}')
@@ -157,7 +228,7 @@ async def addtranschannel(ctx, channel: discord.TextChannel):
 @bot.command(name='removetranschannel')
 @has_permissions(administrator=True)
 async def removetranschannel(ctx, channel: discord.TextChannel):
-    """Remove a translation channel. Usage: !removetranschannel #channel"""
+    """Remove a channel from automatic translation. Usage: !removetranschannel #channel"""
     if not await db.is_trans_channel(channel.id):
         await ctx.send(f'{channel.mention} is not a translation channel.')
         return
@@ -167,7 +238,7 @@ async def removetranschannel(ctx, channel: discord.TextChannel):
 @bot.command(name='listtranschannels')
 @has_permissions(administrator=True)
 async def listtranschannels(ctx):
-    """List all translation channels and their default languages."""
+    """List all channels configured for automatic translation"""
     channels = await db.get_trans_channels()
     if not channels:
         await ctx.send('No translation channels configured.')
