@@ -4,9 +4,8 @@ from src.utils import preserve_user_mentions, restore_mentions
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
 from src import db
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from src.commands import user_commands
-import src.constants
 from discord.ext import commands
 from discord import Intents
 
