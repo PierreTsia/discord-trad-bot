@@ -51,10 +51,19 @@ For the MVP, we'll use Google Translate API's free tier:
 - `!setlang <language_code>` - Set preferred language
 - `!mylang` - Show current language setting
 - `!languages` - List available languages
+- `!help` - Display comprehensive help menu with command examples
+- `!translate <text>` - On-demand translation to user's preferred language
+- `!detect` - Show language detection results for a message
+- `!stats` - Display personal translation statistics
 
 ### 4.2 Admin Commands
 - `!settranschannel <channel>` - Set translation channel
 - `!transstatus` - Show bot status and usage
+- `!addtranschannel <channel>` - Add additional translation channel
+- `!removetranschannel <channel>` - Remove translation channel
+- `!blacklist <user>` - Prevent user from using translation features
+- `!whitelist <user>` - Remove user from blacklist
+- `!setchannellang <channel> <language>` - Set default language for a channel
 
 ## 5. MVP Limitations
 - One translation channel per server
@@ -63,13 +72,24 @@ For the MVP, we'll use Google Translate API's free tier:
 - No translation of messages in other channels
 
 ## 6. Future Enhancements (Post-MVP)
-- Multiple translation channels
-- Translation of attachments
+- Multiple translation channels with channel-specific settings
+- Translation of attachments and media content
 - Voice message translation
-- Translation statistics
-- Custom language pairs
-- Translation memory to reduce API calls
+- Translation statistics and usage analytics
+- Custom language pairs and translation rules
+- Translation memory to reduce API calls and improve consistency
 - Persistent hosting and database storage (e.g., Render, VPS, or cloud platform) for 24/7 availability
+- Enhanced language detection with confidence scores
+- Support for multiple languages in single messages
+- Channel-specific language preferences
+- Translation quality feedback system
+- Rate limiting and API usage optimization
+- Support for role and channel mentions in translations
+- Translation cache for common phrases
+- Fallback translation service integration
+- Bot health monitoring and automatic recovery
+- User feedback collection and analysis
+- Translation quality metrics and reporting
 
 ## 7. Technical Stack
 - Language: Python
