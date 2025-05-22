@@ -1,7 +1,7 @@
 from src import db
-
-# Supported language codes should be imported from main or constants if moved
 from src.constants import SUPPORTED_LANGUAGES
+
+
 
 def setup(bot):
     @bot.command(name='setlang')
