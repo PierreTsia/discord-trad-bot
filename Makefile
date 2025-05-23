@@ -8,3 +8,6 @@ test:
 coverage:
 	coverage run -m pytest
 	coverage report -m
+
+ dev:
+	python src/discord_trad_bot/main.py
