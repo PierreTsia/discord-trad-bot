@@ -1,16 +1,16 @@
-# Discord Translation Bot Installation Guide (Package Version)
+# Discord Translation Bot Installation Guide (Render Version)
 
-This guide explains how to install the Discord translation bot on Railway using the package version. It's much simpler than the old way!
+This guide explains how to install the Discord translation bot on Render using the package version. It's much simpler than the old way!
 
 ---
 
 ## 1. Prerequisites
 - A Discord account with admin rights on your server
 - A GitHub account ([https://github.com/](https://github.com/))
-- A Railway account ([https://railway.app/](https://railway.app/))
+- A Render account ([https://render.com/](https://render.com/))
 - A web browser (Chrome, Firefox, Safari, etc.)
 
-> 💡 **Important Note:** You don't need to install Python or any other tools on your computer. Everything happens directly on Railway (but you do need GitHub for your project files).
+> 💡 **Important Note:** You don't need to install Python or any other tools on your computer. Everything happens directly on Render (but you do need GitHub for your project files).
 
 ---
 
@@ -62,38 +62,36 @@ This guide explains how to install the Discord translation bot on Railway using 
 
 ---
 
-## 5. Create a Railway Project
+## 5. Create a Render Web Service
 
-1. Go to [https://railway.app/](https://railway.app/)
-2. Click "New Project"
-3. Choose "Deploy from GitHub repo"
-4. Select your GitHub repository containing the bot files
+1. Go to [https://dashboard.render.com/](https://dashboard.render.com/)
+2. Click "New +" > "Web Service"
+3. Connect your GitHub account if you haven't already
+4. Select your repo and branch
 
 ---
 
-## 6. Set Environment Variables
+## 6. Configure the Service
+- **Environment**: Python 3 (Render auto-detects from `requirements.txt`)
+- **Build Command**: (leave blank, Render will use `pip install -r requirements.txt` by default)
+- **Start Command**: `python main.py`
 
-1. In Railway, go to the "Variables" tab
+---
+
+## 7. Set Environment Variables
+1. In the Render dashboard, go to the "Environment" tab for your service
 2. Add:
-   - DISCORD_TOKEN (paste your Discord bot token here)
-   - GOOGLE_TRANSLATE_API_KEY (leave blank or put any text)
-
----
-
-## 7. Configure the Railway Service
-
-1. Go to the "Settings" tab
-2. Set:
-   - INSTALL COMMAND: `pip install -r requirements.txt`
-   - START COMMAND: `python main.py`
+   - DISCORD_TOKEN (your Discord bot token)
+   - GOOGLE_TRANSLATE_API_KEY (leave blank or use a dummy value if not needed)
 
 ---
 
 ## 8. Deploy and Launch the Bot
 
-1. Click "Deploy"
-2. Check the logs to see if everything works
-3. The bot should appear online on your Discord server!
+1. Click "Create Web Service"
+2. Wait for the build and deploy to finish
+3. Check the logs for any errors
+4. If all goes well, your bot will be online and connected to your Discord server!
 
 ---
 
@@ -102,7 +100,7 @@ This guide explains how to install the Discord translation bot on Railway using 
 When a new version is available:
 1. Simply change the version number in `requirements.txt` on GitHub
 2. Push the change (commit + push)
-3. Railway will automatically update the bot
+3. Render will automatically update the bot
 
 ---
 

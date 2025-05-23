@@ -4,9 +4,8 @@ A Discord bot that automatically translates messages in a designated channel to 
 
 ---
 
-## 📦 Deployment & Installation Guides
-- [Install on Railway (English)](EN_INSTALL_GUIDE_RAILWAY.md)
-- [Guide d'installation Railway (Français)](FR_INSTALL_GUIDE_RAILWAY.md)
+## 📦 Deployment & Installation Guide
+- [Install on Render (English)](RENDER_INSTALL_GUIDE.md)
 
 ---
 
