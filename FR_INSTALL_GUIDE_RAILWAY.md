@@ -6,10 +6,11 @@ Ce guide explique comment installer le bot de traduction Discord sur Railway en 
 
 ## 1. Prérequis
 - Un compte Discord avec droits d'administrateur sur le serveur
+- Un compte GitHub ([https://github.com/](https://github.com/))
 - Un compte Railway ([https://railway.app/](https://railway.app/))
 - Un navigateur web (Chrome, Firefox, Safari, etc.)
 
-> 💡 **Note importante** : Tu n'as pas besoin d'installer Python ou d'autres outils sur ton ordinateur. Tout se passe directement sur Railway !
+> 💡 **Note importante** : Tu n'as pas besoin d'installer Python ou d'autres outils sur ton ordinateur. Tout se passe directement sur Railway (mais tu dois passer par GitHub pour les fichiers du projet).
 
 ---
 
@@ -42,28 +43,31 @@ Ce guide explique comment installer le bot de traduction Discord sur Railway en 
 
 ---
 
-## 4. Créer un Projet Railway
+## 4. Préparer le Dépôt GitHub
 
-1. Va sur [https://railway.app/](https://railway.app/)
-2. Clique sur "New Project"
-3. Choisis "Start from scratch"
-
----
-
-## 5. Configurer les Fichiers du Projet
-
-1. Dans ton projet Railway, crée un nouveau fichier `requirements.txt` avec :
+1. Crée un nouveau dépôt GitHub (ou utilise un existant)
+2. Ajoute un fichier `requirements.txt` avec :
    ```
-   discord-trad-bot==1.0.0
+   discord-trad-bot==X.Y.Z
    ```
-
-2. Crée un fichier `main.py` avec :
+   (remplace X.Y.Z par la dernière version du package)
+3. Ajoute un fichier `main.py` avec :
    ```python
    from discord_trad_bot import run_bot
 
    if __name__ == "__main__":
        run_bot()
    ```
+4. Pousse ces fichiers sur GitHub (commit + push)
+
+---
+
+## 5. Créer un Projet Railway
+
+1. Va sur [https://railway.app/](https://railway.app/)
+2. Clique sur "New Project"
+3. Choisis "Deploy from GitHub repo"
+4. Sélectionne ton dépôt GitHub contenant les fichiers du bot
 
 ---
 
@@ -96,8 +100,9 @@ Ce guide explique comment installer le bot de traduction Discord sur Railway en 
 ## 9. Mettre à Jour le Bot
 
 Quand une nouvelle version est disponible :
-1. Modifie simplement le numéro de version dans `requirements.txt`
-2. Railway mettra à jour automatiquement le bot
+1. Modifie simplement le numéro de version dans `requirements.txt` sur GitHub
+2. Pousse le changement (commit + push)
+3. Railway mettra à jour automatiquement le bot
 
 ---
 

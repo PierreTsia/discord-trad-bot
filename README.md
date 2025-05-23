@@ -2,6 +2,14 @@
 
 A Discord bot that automatically translates messages in a designated channel to each user's preferred language while maintaining Discord's rich formatting.
 
+---
+
+## 📦 Deployment & Installation Guides
+- [Install on Railway (English)](EN_INSTALL_GUIDE_RAILWAY.md)
+- [Guide d'installation Railway (Français)](FR_INSTALL_GUIDE_RAILWAY.md)
+
+---
+
 ## Features
 
 - Automatic translation of messages in a designated channel
@@ -73,10 +81,28 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key
 ## Commands
 
 ### User Commands
-- `!setlang <language_code>` - Set preferred language
-- `!mylang` - Show current language setting
-- `!languages` - List available languages
+- `!setlang <language_code>` — Set your preferred language
+- `!mylang` — Show your current language setting
+- `!languages` — List available languages
+- `!ping` — Test if the bot is working
 
 ### Admin Commands
-- `!settranschannel <channel>` - Set translation channel
-- `!transstatus` - Show bot status and usage
+- `!settranschannel <#channel>` — Set the translation channel
+- `!addtranschannel <#channel>` — Add a new translation channel
+- `!removetranschannel <#channel>` — Remove a translation channel
+- `!listtranschannels` — List all translation channels
+- `!setchannellang <#channel> <language_code>` — Set the default language for a translation channel
+- `!debugdb` — Debug command to check database schema and content
+- `!transstatus` — Show bot status and usage
+
+---
+
+## Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## License
+
+MIT
