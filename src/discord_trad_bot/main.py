@@ -8,6 +8,9 @@ from discord_trad_bot.utils import preserve_user_mentions, restore_mentions, tra
 from discord_trad_bot.constants import SUPPORTED_LANGUAGES
 # Import command modules
 from discord_trad_bot.commands import user_commands, admin_commands, misc_commands
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +19,26 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                'status': 'healthy',
+                'bot_status': 'online' if bot.is_ready() else 'offline'
+            }
+            self.wfile.write(json.dumps(response).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_health_server():
+    server = HTTPServer(('0.0.0.0', int(os.getenv('PORT', '8080'))), HealthCheckHandler)
+    print(f"Health check server running on port {os.getenv('PORT', '8080')}")
+    server.serve_forever()
 
 class TranslationBot(commands.Bot):
     def __init__(self):
@@ -85,6 +108,11 @@ async def on_message(message):
 
 def run_bot():
     """Entry point for the bot when used as a package."""
+    # Start the health check server in a separate thread
+    health_thread = threading.Thread(target=run_health_server, daemon=True)
+    health_thread.start()
+    
+    # Run the bot
     bot.run(os.getenv('DISCORD_TOKEN'))
 
 # Run the bot if this file is executed directly
