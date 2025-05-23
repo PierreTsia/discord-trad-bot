@@ -1,5 +1,5 @@
-from src import db
-from src.constants import SUPPORTED_LANGUAGES
+from discord_trad_bot import db
+from discord_trad_bot.constants import SUPPORTED_LANGUAGES
 
 
 

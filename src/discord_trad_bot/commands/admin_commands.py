@@ -1,10 +1,10 @@
-from src import db
+from discord_trad_bot import db
 from discord.ext import commands
 import aiosqlite
 from discord.ext.commands import has_permissions, CheckFailure
 
 # Supported language codes should be imported from main or constants if moved
-from src.constants import SUPPORTED_LANGUAGES
+from discord_trad_bot.constants import SUPPORTED_LANGUAGES
 
 def setup(bot):
     @bot.command(name='debugdb')

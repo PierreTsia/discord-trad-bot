@@ -1,6 +1,6 @@
 lint:
-	ruff check src/
-	ruff check tests/
+	ruff check src/discord_trad_bot/
+	ruff check src/discord_trad_bot/tests/
 
 test:
 	pytest 

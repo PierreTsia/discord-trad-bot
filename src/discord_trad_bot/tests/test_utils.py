@@ -1,11 +1,11 @@
 import sys
 import os
-from src.utils import preserve_user_mentions, restore_mentions
+from discord_trad_bot.utils import preserve_user_mentions, restore_mentions
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
-from src import db
+from discord_trad_bot import db
 from unittest.mock import AsyncMock
-from src.commands import user_commands
+from discord_trad_bot.commands import user_commands
 from discord.ext import commands
 from discord import Intents
 
@@ -67,7 +67,7 @@ async def test_setlang_valid(monkeypatch):
     ctx.author.id = 123
     ctx.send = AsyncMock()
     monkeypatch.setattr(db, "set_user_lang", AsyncMock())
-    monkeypatch.setattr("src.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en", "de"})
+    monkeypatch.setattr("discord_trad_bot.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en", "de"})
 
     # Call the command (note: pass self as first arg for method)
     await setlang(ctx, "fr")
@@ -84,7 +84,7 @@ async def test_setlang_invalid(monkeypatch):
     ctx.author.id = 123
     ctx.send = AsyncMock()
     monkeypatch.setattr(db, "set_user_lang", AsyncMock())
-    monkeypatch.setattr("src.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en"})
+    monkeypatch.setattr("discord_trad_bot.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en"})
 
     await setlang(ctx, "de")
     ctx.send.assert_awaited_with("`de` is not a supported language code. Use `!languages` to see the list of supported codes.")
@@ -126,7 +126,7 @@ async def test_languages_chunking(monkeypatch):
     ctx.send = AsyncMock()
     # Patch SUPPORTED_LANGUAGES to 120 fake codes
     fake_langs = {f"lang{i}" for i in range(120)}
-    monkeypatch.setattr("src.commands.user_commands.SUPPORTED_LANGUAGES", fake_langs)
+    monkeypatch.setattr("discord_trad_bot.commands.user_commands.SUPPORTED_LANGUAGES", fake_langs)
 
     await languages(ctx)
     # Should send 3 times (120/50 = 2.4 -> 3 chunks)
@@ -142,7 +142,7 @@ async def test_setlang_uppercase(monkeypatch):
     ctx.author.id = 123
     ctx.send = AsyncMock()
     monkeypatch.setattr(db, "set_user_lang", AsyncMock())
-    monkeypatch.setattr("src.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en"})
+    monkeypatch.setattr("discord_trad_bot.commands.user_commands.SUPPORTED_LANGUAGES", {"fr", "en"})
 
     await setlang(ctx, "FR")
     ctx.send.assert_awaited_with("Your preferred language has been set to `fr`")

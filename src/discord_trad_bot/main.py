@@ -2,12 +2,12 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from src import db
+from discord_trad_bot import db
 from discord import app_commands
-from src.utils import preserve_user_mentions, restore_mentions, translate_message, detect_language
-from src.constants import SUPPORTED_LANGUAGES
+from discord_trad_bot.utils import preserve_user_mentions, restore_mentions, translate_message, detect_language
+from discord_trad_bot.constants import SUPPORTED_LANGUAGES
 # Import command modules
-from src.commands import user_commands, admin_commands, misc_commands
+from discord_trad_bot.commands import user_commands, admin_commands, misc_commands
 
 # Load environment variables
 load_dotenv()
@@ -41,8 +41,6 @@ class TranslationBot(commands.Bot):
             ][:25]  # Discord limits to 25 choices
 
 bot = TranslationBot()
-
-
 
 # Register commands
 user_commands.setup(bot)
@@ -85,6 +83,10 @@ async def on_message(message):
             await message.reply(f"{content_preserved}")
     await bot.process_commands(message)
 
-# Run the bot
+def run_bot():
+    """Entry point for the bot when used as a package."""
+    bot.run(os.getenv('DISCORD_TOKEN'))
+
+# Run the bot if this file is executed directly
 if __name__ == '__main__':
-    bot.run(os.getenv('DISCORD_TOKEN')) 
+    run_bot() 
