@@ -7,7 +7,7 @@ from discord import app_commands
 from discord_trad_bot.utils import preserve_user_mentions, restore_mentions, translate_message, detect_language
 from discord_trad_bot.constants import SUPPORTED_LANGUAGES
 # Import command modules
-from discord_trad_bot.commands import user_commands, admin_commands, misc_commands
+from discord_trad_bot.commands import admin_commands
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
@@ -106,7 +106,29 @@ class TranslationBot(commands.Bot):
             await db.set_user_lang(interaction.user.id, language)
             await interaction.response.send_message(f'Your preferred language has been set to `{language}`', ephemeral=True)
         print("Registered /setlang command")
-        
+
+        @self.tree.command(name="ping", description="Test if the bot is working")
+        async def ping_slash(interaction: discord.Interaction):
+            await interaction.response.send_message("Pong!", ephemeral=True)
+        print("Registered /ping command")
+
+        @self.tree.command(name="languages", description="List available languages")
+        async def languages_slash(interaction: discord.Interaction):
+            codes = sorted(SUPPORTED_LANGUAGES)
+            chunk_size = 50
+            for i in range(0, len(codes), chunk_size):
+                await interaction.response.send_message(' '.join(codes[i:i+chunk_size]), ephemeral=True)
+        print("Registered /languages command")
+
+        @self.tree.command(name="mylang", description="Show your current language setting")
+        async def mylang_slash(interaction: discord.Interaction):
+            user_lang = await db.get_user_lang(interaction.user.id)
+            if user_lang:
+                await interaction.response.send_message(f'Your preferred language is `{user_lang}`.', ephemeral=True)
+            else:
+                await interaction.response.send_message('You have not set a preferred language yet. Use `/setlang <language_code>`.', ephemeral=True)
+        print("Registered /mylang command")
+
         @self.tree.command(name="help-translate", description="Show help for the translation bot")
         async def help_slash(interaction: discord.Interaction):
             embed = discord.Embed(title="Translation Bot Help", color=discord.Color.blue())
@@ -149,9 +171,7 @@ class TranslationBot(commands.Bot):
 bot = TranslationBot()
 
 # Register commands
-user_commands.setup(bot)
 admin_commands.setup(bot)
-misc_commands.setup(bot)
 
 # --- Bot Events ---
 @bot.event
