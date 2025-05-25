@@ -12,9 +12,6 @@ def setup(bot):
     async def debugdb(ctx):
         """Debug command to check database schema and content"""
         try:
-            # Get all translation channels
-            channels = await db.get_trans_channels()
-            channels_info = "\n".join([f"Channel ID: {ch[0]}, Default Lang: {ch[1]}" for ch in channels])
             # Get some user preferences (limit to 5 for readability)
             async with aiosqlite.connect(db.DB_PATH) as conn:
                 async with conn.execute('SELECT user_id, lang FROM user_lang LIMIT 5') as cursor:
@@ -26,7 +23,7 @@ def setup(bot):
                     tables = await cursor.fetchall()
             tables_info = "\n".join([f"Table: {t[0]}" for t in tables])
             # Format the response
-            response = f"""**Database Debug Info:**\n\n**Tables:**\n{tables_info}\n\n**Translation Channels:**\n{channels_info}\n\n**Sample User Preferences (up to 5):**\n{users_info}"""
+            response = f"""**Database Debug Info:**\n\n**Tables:**\n{tables_info}\n\n**Sample User Preferences (up to 5):**\n{users_info}"""
             await ctx.send(response)
         except Exception as e:
             await ctx.send(f"Error checking database: {str(e)}")

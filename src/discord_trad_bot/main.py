@@ -12,6 +12,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
+
 # Load environment variables
 load_dotenv()
 
@@ -40,6 +41,56 @@ def run_health_server():
     print(f"Health check server running on port {os.getenv('PORT', '8080')}")
     server.serve_forever()
 
+# Add context menu command for translation
+def add_translate_context_menu(bot):
+    @app_commands.context_menu(name="Translate")
+    async def translate_message_context(interaction: discord.Interaction, message: discord.Message):
+        user_lang = await db.get_user_lang(interaction.user.id)
+        if not user_lang:
+            await interaction.response.send_message(
+                "⚠️ You haven't set a language preference yet!\n"
+                "Please use `/setlang <language_code>` (or `!setlang <language_code>`) to set your preferred language before using Translate.",
+                ephemeral=True
+            )
+            return
+
+        detected_lang = detect_language(message.content)
+        if not detected_lang:
+            await interaction.response.send_message(
+                "Could not detect the language of the message.", ephemeral=True
+            )
+            return
+
+        if detected_lang == user_lang:
+            await interaction.response.send_message(
+                f"This message is already in your preferred language ({user_lang}).", ephemeral=True
+            )
+            return
+
+        try:
+            content_preserved, mention_map = preserve_user_mentions(message.content)
+            translated_text = translate_message(content_preserved, user_lang)
+            translated_text = restore_mentions(translated_text, mention_map)
+
+            embed = discord.Embed(
+                color=discord.Color.blue(),
+                description=translated_text
+            )
+            embed.set_author(
+                name=f"Translation for {interaction.user.display_name}",
+                icon_url=interaction.user.display_avatar.url
+            )
+            embed.set_footer(text=f"Original message by {message.author.display_name}")
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            print(f"Error processing translation for user {interaction.user.id}: {str(e)}")
+            await interaction.response.send_message(
+                "Sorry, there was an error translating this message.", ephemeral=True
+            )
+
+    bot.tree.add_command(translate_message_context)
+
 class TranslationBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='!', intents=intents, help_command=None)
@@ -54,6 +105,32 @@ class TranslationBot(commands.Bot):
                 return
             await db.set_user_lang(interaction.user.id, language)
             await interaction.response.send_message(f'Your preferred language has been set to `{language}`', ephemeral=True)
+        print("Registered /setlang command")
+        
+        @self.tree.command(name="help-translate", description="Show help for the translation bot")
+        async def help_slash(interaction: discord.Interaction):
+            embed = discord.Embed(title="Translation Bot Help", color=discord.Color.blue())
+            embed.add_field(
+                name="User Commands",
+                value=(
+                    "`/setlang <language_code>` — Set your preferred language\n"
+                    "`/languages` — List available languages\n"
+                    "`/mylang` — Show your current language setting\n"
+                    "`/ping` — Test if the bot is working"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="How to Translate Messages",
+                value=(
+                    "• Set your preferred language with `/setlang <language_code>`\n"
+                    "• Right-click any message, go to **Apps > Translate** to get a private translation in your language\n"
+                    "• All translation features are available in every channel."
+                ),
+                inline=False
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        print("Registered /help-translate command")
         
         @setlang.autocomplete('language')
         async def language_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
@@ -62,6 +139,12 @@ class TranslationBot(commands.Bot):
                 for lang in sorted(SUPPORTED_LANGUAGES)
                 if current.lower() in lang.lower()
             ][:25]  # Discord limits to 25 choices
+
+        add_translate_context_menu(self)
+        print("Registered context menu command (Translate)")
+
+        # Print all registered app commands for debugging
+        print("App commands after setup_hook:", [cmd.name for cmd in self.tree.get_commands()])
 
 bot = TranslationBot()
 
@@ -75,36 +158,13 @@ misc_commands.setup(bot)
 async def on_ready():
     await db.init_db()
     print(f'{bot.user} has connected to Discord!')
+    # Print all registered app commands after bot is ready
+    print("App commands after on_ready:", [cmd.name for cmd in bot.tree.get_commands()])
 
-@bot.event
-async def on_message(message):
-    if message.author.bot:
-        return
-    # Skip translation for commands
-    if message.content.startswith('!'):
-        await bot.process_commands(message)
-        return
-    # Check if the message is in a translation channel
-    if await db.is_trans_channel(message.channel.id):
-        user_lang = await db.get_user_lang(message.author.id)
-        if not user_lang:
-            # Use channel's default language if user hasn't set one
-            user_lang = await db.get_channel_default_lang(message.channel.id)
-        # Preserve user mentions
-        content_preserved, mention_map = preserve_user_mentions(message.content)
-        detected_lang = detect_language(content_preserved)
-        # Only translate if the message isn't already in the user's preferred language
-        if detected_lang and detected_lang != user_lang:
-            try:
-                translated_text = translate_message(content_preserved, user_lang)
-                translated_text = restore_mentions(translated_text, mention_map)
-                await message.reply(f"{translated_text}")
-            except Exception as e:
-                await message.reply(f"[Translation error: {e}]")
-        else:
-            content_preserved = restore_mentions(content_preserved, mention_map)
-            await message.reply(f"{content_preserved}")
-    await bot.process_commands(message)
+@bot.command()
+async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send("Synced commands globally.")
 
 def run_bot():
     """Entry point for the bot when used as a package."""
