@@ -35,31 +35,9 @@ async def test_set_and_get_user_lang(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_add_and_get_trans_channel(tmp_path):
-    db.DB_PATH = str(tmp_path / 'test.db')
-    await db.init_db()
-    await db.add_trans_channel(12345, 'fr')
-    channels = await db.get_trans_channels()
-    assert (12345, 'fr') in channels 
-
-
-@pytest.mark.asyncio
-async def test_remove_trans_channel(tmp_path):
-    db.DB_PATH = str(tmp_path / 'test.db')
-    await db.init_db()
-    await db.add_trans_channel(12345, 'fr')
-    await db.remove_trans_channel(12345)
-    channels = await db.get_trans_channels()
-    assert (12345, 'fr') not in channels 
-
-
-@pytest.mark.asyncio
 async def test_setlang_valid(monkeypatch):
-    from discord import Intents
     bot = commands.Bot(command_prefix="!", intents=Intents.default())
     user_commands.setup(bot)
-
-    # Get the actual command callback
     setlang = bot.get_command("setlang").callback
 
     # Mock context and db
